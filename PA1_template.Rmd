@@ -5,21 +5,102 @@ output:
     keep_md: true
 ---
 
+## Install libraries
+
+```{r results="hide"}
+install.packages("dplyr")
+install.packages("ggplot2")
+library(dplyr)
+library(ggplot2)
+```
 
 ## Loading and preprocessing the data
-
-
+```{r}
+unzip("activity.zip")
+act <- read.csv("activity.csv")
+dfAct <- as.data.frame.matrix(act)
+```
 
 ## What is mean total number of steps taken per day?
 
+```{r}
+daily_sum_steps <- dfAct %>%
+  mutate(day = as.Date(date, format="%Y-%m-%d")) %>%
+  group_by(day) %>% # group by the day column
+  summarise(total_steps=sum(steps)) %>%  # calculate the SUM of all precipitation that occurred on each day
+  na.omit()
 
+
+meansteps <- mean(daily_sum_steps$total_steps)
+
+mediansteps <- median(daily_sum_steps$total_steps)
+
+{hist(daily_sum_steps$total_steps, breaks=10)
+#abline(v = mx, col = "blue", lwd = 2)
+abline(v=meansteps,col="blue")
+abline(v=mediansteps,col="red")
+}
+
+#barplot(daily_sum_steps$total_steps, names.arg=daily_sum_steps$date)
+```
 
 ## What is the average daily activity pattern?
+```{r}
+dfActNoNA <- dfAct
+dfActNoNA[is.na(dfActNoNA)] <- 0
+
+mean_y <- mean(dfActNoNA$steps)
+dfActNoNA$grp.mean.values <- ave(dfActNoNA$steps, dfActNoNA$interval)
+max_x <- dfActNoNA$interval[which.max(dfActNoNA$grp.mean.values)]
+
+ggplot(data = dfActNoNA, aes(x = interval, y = steps)) + 
+  stat_summary(fun.y = mean, na.rm = TRUE, geom ='line') +
+  geom_hline(yintercept=mean_y, color = "red") +
+  geom_vline(xintercept=max_x, color="red") +
+  geom_text(aes(0,mean_y,label = round(mean_y,2), vjust = -1)) +
+  geom_text(aes(max_x,0,label = round(max_x,2)))
 
 
+#dfActNoNA$x <- gsub("-", "", dfActNoNA$date, fixed = FALSE)
+#dfActNoNA$x <- paste(dfActNoNA$x,dfActNoNA$interval)
+#dfActNoNA$x <- gsub(" ", "", dfActNoNA$x, fixed = FALSE)
+
+#ts <- ts(dfActNoNA$x)
+
+#dfActMeans <- dfActNoNA %>%
+#   group_by(dfActNoNA$interval) %>%
+#   summarise(yy=mean(dfActNoNA$steps))
+
+
+
+#  geom_smooth(method = lm, se = FALSE)
+  
+#  geom_line(aes(y=steps), stat="summary", fun.y=mean)
+
+
+#plot(ts, dfActNoNA$steps, type='l', xlab= 'Date', ylab= 'Steps', col='green' , lwd=1)
+
+#dfActNoNA$dateFormatted <- as.Date(paste(dfActNoNA$date,dfActNoNA$interval)) #,"%Y%m%d %")
+#dfActNoNA$x <- paste(dfActNoNA$date,dfActNoNA$interval)
+#dfActNoNA$x <- gsub(" ", "", dfActNoNA$x, fixed = FALSE)
+
+#plot(dfActNoNA$x[1:10], dfActNoNA$steps[1:10], type='l', xlab= 'Date', ylab= 'Steps', col='green' , lwd=2)
+
+#ts <- ts(dfActNoNA$x) #, start=201210010, end=201211302355, frequency=12)
+
+#plot(ts,
+#       main="Test",
+#       xlab="Year", ylab="Stock Price in INR",
+#       col="navy")
+```
+The total number of missing values in the dataset are:
 
 ## Imputing missing values
+```{r}
+sum(is.na(dfAct$steps))
 
 
+```
 
+)
 ## Are there differences in activity patterns between weekdays and weekends?
