@@ -27,33 +27,37 @@ dfAct <- as.data.frame.matrix(act)
 daily_sum_steps <- dfAct %>%
   mutate(day = as.Date(date, format="%Y-%m-%d")) %>%
   group_by(day) %>% # group by the day column
-  summarise(total_steps=sum(steps)) %>%  # calculate the SUM of all precipitation that occurred on each day
-  na.omit()
+  summarise(total_steps=sum(steps)) #%>%  # calculate the SUM of all precipitation that occurred on each day
+  #na.omit()
 
+hist(daily_sum_steps$total_steps, breaks=10)
 
-meansteps <- mean(daily_sum_steps$total_steps)
-
-mediansteps <- median(daily_sum_steps$total_steps)
-
-{hist(daily_sum_steps$total_steps, breaks=10)
-#abline(v = mx, col = "blue", lwd = 2)
-abline(v=meansteps,col="blue")
-abline(v=mediansteps,col="red")
-}
+#{hist(daily_sum_steps$total_steps, breaks=10)
+##abline(v = mx, col = "blue", lwd = 2)
+#abline(v=meansteps,col="blue")
+#abline(v=mediansteps,col="red")
+#}
 
 #barplot(daily_sum_steps$total_steps, names.arg=daily_sum_steps$date)
 ```
+The mean and the medium of the total number of steps taken per day:
+
+```{r}
+mean(daily_sum_steps$total_steps)
+
+median(daily_sum_steps$total_steps)
+
+```
+
+
 
 ## What is the average daily activity pattern?
 ```{r}
-dfActNoNA <- dfAct
-dfActNoNA[is.na(dfActNoNA)] <- 0
+mean_y <- mean(dfAct$steps, na.rm = TRUE)
+dfAct$grp.mean.values <- ave(dfAct$steps, dfAct$interval, FUN=function(x) mean(x, na.rm=T))
+max_x <- dfAct$interval[which.max(dfAct$grp.mean.values)]
 
-mean_y <- mean(dfActNoNA$steps)
-dfActNoNA$grp.mean.values <- ave(dfActNoNA$steps, dfActNoNA$interval)
-max_x <- dfActNoNA$interval[which.max(dfActNoNA$grp.mean.values)]
-
-ggplot(data = dfActNoNA, aes(x = interval, y = steps)) + 
+ggplot(data = dfAct, aes(x = interval, y = steps)) + 
   stat_summary(fun.y = mean, na.rm = TRUE, geom ='line') +
   geom_hline(yintercept=mean_y, color = "red") +
   geom_vline(xintercept=max_x, color="red") +
@@ -102,5 +106,96 @@ sum(is.na(dfAct$steps))
 
 ```
 
-)
+```{r}
+
+dfActNoNA <- dfAct
+dfActNoNA$steps[is.na(dfActNoNA$steps)] <- dfActNoNA$grp.mean.values[is.na(dfActNoNA$steps)] 
+
+daily_sum_steps <- dfActNoNA %>%
+  mutate(day = as.Date(date, format="%Y-%m-%d")) %>%
+  group_by(day) %>% # group by the day column
+  summarise(total_steps=sum(steps)) #%>%  # calculate the SUM of all precipitation that occurred on each day
+  #na.omit()
+
+hist(daily_sum_steps$total_steps, breaks=10)
+
+#{hist(daily_sum_steps$total_steps, breaks=10)
+##abline(v = mx, col = "blue", lwd = 2)
+#abline(v=meansteps,col="blue")
+#abline(v=mediansteps,col="red")
+#}
+
+#barplot(daily_sum_steps$total_steps, names.arg=daily_sum_steps$date)
+
+#dfAct$grp.mean.values
+#dfActNoNA <- dfAct
+#dfActNoNA[is.na(dfActNoNA)] <- 0
+#dfActMeans <- dfActNoNA %>%
+#   group_by(dfActNoNA$interval) %>%
+#   summarise(yy=mean(dfActNoNA$steps, na.rm = TRUE))
+#library(dplyr)
+#dfActMeans <- dfActNoNA %>% 
+#  group_by(interval) %>% 
+#  mutate(steps = is.na(steps), mean(steps, na.rm = TRUE), steps)
+#dat2[order(dat2$id), ] #plyr orders by group so we have to reorder
+#dfActNoNA <- dfAct
+
+
+```
+
+The mean and the medium of the total number of steps taken per day:
+
+```{r}
+mean(daily_sum_steps$total_steps)
+
+median(daily_sum_steps$total_steps)
+
+```
+
 ## Are there differences in activity patterns between weekdays and weekends?
+
+```{r}
+dfActNoNA$date <- as.Date(dfActNoNA$date)
+weekdays1 <- c('mandag', 'tirsdag', 'onsdag', 'torsdag', 'fredag')
+dfActNoNA$wDay <- c('weekend', 'weekday')[(weekdays(dfActNoNA$date) %in% weekdays1)+1L]
+
+library(tidyverse)
+
+#df  <- data.frame(stringsAsFactors=FALSE,
+#       country = c("Austia", "Austia", "Austia", "Austia", "Austia", "Austia"),
+#   loan_amount = c(175, 100, 825, 175, 1025, 225),
+#        gender = c("F", "F", "M", "F", "M", "F")
+#)
+
+dfActNoNA %>%
+  group_by(wDay)  %>%
+  ave(dfAct$steps, dfAct$interval, FUN=function(x) mean(x, na.rm=T))
+
+
+
+dfActNoNA$average. <- ave(dfAct$steps, dfAct$interval, FUN=function(x) mean(x, na.rm=T))
+
+dfActNoNA$average.wDay <- ave(dfActNoNA$grp.mean.values, dfActNoNA$wDay, FUN=function(x) mean(x, na.rm=T))
+
+max_x <- dfAct$interval[which.max(dfAct$grp.mean.values)]
+
+ggplot(data = dfAct, aes(x = interval, y = steps)) + 
+  stat_summary(fun.y = mean, na.rm = TRUE, geom ='line') +
+  geom_hline(yintercept=mean_y, color = "red") +
+  geom_vline(xintercept=max_x, color="red") +
+  geom_text(aes(0,mean_y,label = round(mean_y,2), vjust = -1)) +
+  geom_text(aes(max_x,0,label = round(max_x,2)))
+
+
+```
+
+
+
+
+
+#Create a new factor variable in the dataset with two levels – “weekday” and “weekend” indicating whether a given date is a weekday or weekend day.
+
+#Make a panel plot containing a time series plot (i.e.  start color red, type = "l", end color red\color{red}{\verb|type = "l"|}type="l") of the 5-minute #interval (x-axis) and the average number of steps taken, averaged across all weekday days or weekend days (y-axis). See the README file in the GitHub #repository to see an example of what this plot should look like using simulated data.
+
+
+
